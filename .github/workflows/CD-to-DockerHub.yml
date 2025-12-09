@@ -11,10 +11,23 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Login to Docker Hub
-      run: |
-        echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push image
+    - name: Build image
       run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/python-app:latest .
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/python-app:latest
+        IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/python-app
+        docker build -t $IMAGE:latest .
+
+    - name: Tag image with commit SHA
+      run: |
+        IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/python-app
+        docker tag $IMAGE:latest $IMAGE:${{ github.sha }}
+
+    - name: Push both tags
+      run: |
+        IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/python-app
+        docker push $IMAGE:latest
+        docker push $IMAGE:${{ github.sha }}
